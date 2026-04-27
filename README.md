@@ -18,6 +18,7 @@ OmniVoice TTS模型的AMD GPU支持版本，支持ROCm加速。
 - ├── omnivoice_amd-0.1.4-py3-none-any.whl  (160KB)
 - ├── install.bat                            (一键安装，自动检查Python版本)
 - ├── run.bat                  （快速启动）
+- ├── launcher.py 启动器（含自动检测）
 - ├── INSTALL_GUIDE.md                       (详细安装指南)
 - ├── README.md                              (使用说明)
 - ├── verify_install.py                      (安装验证)
