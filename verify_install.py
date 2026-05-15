@@ -5,8 +5,14 @@ OmniVoice AMD GPU Edition - 快速测试脚本
 """
 
 import os
+import pathlib
+
+# Setup model directory with cross-platform support
+model_dir = pathlib.Path.home() / "OmniVoice_models"
+model_dir.mkdir(parents=True, exist_ok=True)
+
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
-os.environ["HF_HOME"] = "./models"
+os.environ["HF_HOME"] = str(model_dir)
 os.environ["MIOPEN_FIND_MODE"] = "fast"
 os.environ["MIOPEN_LOG_LEVEL"] = "6"
 
@@ -74,3 +80,4 @@ print(f"  输出文件: test_output.wav")
 print(f"\n" + "=" * 60)
 print("验证完成！OmniVoice AMD GPU版本工作正常")
 print("=" * 60)
+print(f"\n[Info] 模型缓存目录: {model_dir}")

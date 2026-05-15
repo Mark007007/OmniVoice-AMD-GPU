@@ -251,7 +251,7 @@ echo ============================================================
 echo.
 
 echo Checking GPU status...
-%PYTHON_CMD% -c "import torch; print(''); print('PyTorch:', torch.__version__); print('CUDA:', torch.cuda.is_available()); print('GPU:', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'Not detected'); print('')"
+%PYTHON_CMD% -c "import torch; print(''); print('PyTorch:', torch.__version__); print('CUDA:', torch.cuda.is_available()); print('GPU:', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'Not available')"
 
 echo.
 echo ============================================================

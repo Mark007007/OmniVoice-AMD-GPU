@@ -6,18 +6,21 @@ import os
 import sys
 import subprocess
 import socket
+import string
+import logging
+
+# Setup logging
+logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] %(message)s')
+logger = logging.getLogger(__name__)
 
 def find_model_cache():
     """Auto-detect model cache directory"""
     # Priority 1: Current directory
     current_models = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
     
-    # Priority 2: Scan all drives
-    drives = []
-    for letter in "CDEFGH":
-        drive = f"{letter}:\\"
-        if os.path.exists(drive):
-            drives.append(drive)
+    # Priority 2: Scan all mounted drives (more efficient)
+    drives = [f"{d}:\\" for d in string.ascii_uppercase if os.path.exists(f"{d}:\\")]
+    logger.debug(f"Available drives: {drives}")
     
     possible_paths = [current_models]
     
@@ -31,31 +34,36 @@ def find_model_cache():
     # Check each path for existing models
     for path in possible_paths:
         hub_path = os.path.join(path, "hub")
-        if os.path.exists(hub_path):
-            try:
+        try:
+            if os.path.exists(hub_path):
                 models = os.listdir(hub_path)
                 if any("OmniVoice" in m or "k2-fsa" in m for m in models):
+                    logger.info(f"Found model cache at: {path}")
                     return path
-            except:
-                pass
+        except (FileNotFoundError, PermissionError) as e:
+            logger.debug(f"Cannot access {hub_path}: {e}")
+            continue
     
     # No existing models found, use current directory
     # Create models folder if not exists
     if not os.path.exists(current_models):
         os.makedirs(current_models, exist_ok=True)
+        logger.info(f"Created model cache directory: {current_models}")
     
     return current_models
 
 def check_port(host, port, timeout=1):
     """Check if a port is open"""
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(timeout)
         result = sock.connect_ex((host, port))
-        sock.close()
         return result == 0
-    except:
+    except Exception as e:
+        logger.debug(f"Error checking port {port}: {e}")
         return False
+    finally:
+        sock.close()
 
 def detect_proxy():
     """Auto-detect common proxy ports"""
@@ -68,6 +76,7 @@ def detect_proxy():
     
     for port, name in common_ports:
         if check_port("127.0.0.1", port):
+            logger.info(f"Detected proxy: {name} on port {port}")
             return f"http://127.0.0.1:{port}", name
     return None, None
 
@@ -81,14 +90,19 @@ def setup_env():
     os.environ["HF_HOME"] = model_cache
     os.environ["MIOPEN_LOG_LEVEL"] = "6"
     
+    logger.debug(f"HF_ENDPOINT: {os.environ['HF_ENDPOINT']}")
+    logger.debug(f"HF_HOME: {os.environ['HF_HOME']}")
+    
     # Auto-detect proxy
     proxy_url, proxy_name = detect_proxy()
     
     if proxy_url:
         os.environ["HTTP_PROXY"] = proxy_url
         os.environ["HTTPS_PROXY"] = proxy_url
+        logger.debug(f"Proxy set: {proxy_url} ({proxy_name})")
         return model_cache, proxy_url, proxy_name
     
+    logger.debug("No proxy detected")
     return model_cache, None, None
 
 def main():
@@ -116,8 +130,9 @@ def main():
     
     try:
         choice = input("请输入选项 (1/2/3): ").strip()
-    except:
-        choice = "1"
+    except (EOFError, KeyboardInterrupt):
+        print("\n\n中断")
+        sys.exit(0)
     
     print()
     
@@ -135,6 +150,7 @@ def main():
         except KeyboardInterrupt:
             print("\n服务已停止")
         except Exception as e:
+            logger.error(f"Failed to start web UI: {e}")
             print(f"启动失败: {e}")
             
     elif choice == "2":

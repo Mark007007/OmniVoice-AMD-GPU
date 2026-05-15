@@ -2,15 +2,20 @@
 """OmniVoice 性能对比测试 - AMD ROCm vs ONNX DirectML"""
 
 import os
-os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
-os.environ["HF_HOME"] = "D:/OmniVoice/models"
-os.environ["HUGGINGFACE_HUB_CACHE"] = "D:/OmniVoice/models"
-os.environ["MIOPEN_FIND_MODE"] = "fast"
-os.environ["MIOPEN_LOG_LEVEL"] = "6"
-
+import pathlib
 import time
 import torch
 import soundfile as sf
+
+# Setup model directory with cross-platform support
+model_dir = pathlib.Path.home() / "OmniVoice_models"
+model_dir.mkdir(parents=True, exist_ok=True)
+
+os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
+os.environ["HF_HOME"] = str(model_dir)
+os.environ["HUGGINGFACE_HUB_CACHE"] = str(model_dir)
+os.environ["MIOPEN_FIND_MODE"] = "fast"
+os.environ["MIOPEN_LOG_LEVEL"] = "6"
 
 print("=" * 70)
 print("OmniVoice 性能测试 - AMD ROCm (RX 9070 XT)")
@@ -35,11 +40,12 @@ print(f"\n" + "=" * 70)
 print("RTF 性能测试 (预热后)")
 print("=" * 70)
 
+# Test cases with full text content
 test_cases = [
     ("短文本(32步)", "你好，欢迎使用OmniVoice。", None, 32),
     ("短文本(16步)", "你好，欢迎使用OmniVoice。", None, 16),
     ("中等文本(32步)", "OmniVoice是一个支持六百多种语言的零样本文本转语音模型，采用扩散语言模型架构。", "female, low pitch", 32),
-    ("长文本(32步)", "OmniVoice是一个支持六百多种语言的零样本文本转语音模型。它采用扩散语言模型架构，能够生成高质量的语音，并支持声音克隆和声音设计功能。该模型具有出色的推理速度，实时因子可低至零点零二五。", None, 32),
+    ("长文本(32步)", "OmniVoice是一个支持六百多种语言的零样本文本转语音模型。它采用扩散语言模型架构，能够生成高质量的语音，并支持声音克隆和声音设计功能。该模型在多个基准测试中表现出色，是目前最先进的TTS解决方案之一。", None, 32),
 ]
 
 results = []
@@ -85,3 +91,5 @@ print(f"""
   
   ✓ ROCm版本比ONNX快约 {0.5/avg_rtf:.0f} 倍！
 """)
+
+print(f"[Info] 模型缓存目录: {model_dir}")
